@@ -54,6 +54,27 @@ class HiddenParentChildExtension extends AbstractTypeExtension
     /**
      * @inheritDoc
      */
+    public function finishView(FormView $view, FormInterface $form, array $options)
+    {
+        if (!$form->getParent()) {
+            $hidden = [];
+            foreach($form as $childName => $child) {
+                $hiddenConfig = $child->getConfig()->getOption('hidden');
+
+                if ($hiddenConfig !== null && isset($hiddenConfig['parent']) && isset($view[$hiddenConfig['parent']])) {
+                    $parentName = $view[$hiddenConfig['parent']]->vars['full_name'];
+                    $childName = $view[$childName]->vars['full_name'];
+                    $hidden[$childName][$parentName] = ['values' => (array)$hiddenConfig['value']];
+                }
+            }
+
+            $view->vars['attr'] = (isset($view->vars['attr'])) ? array_merge($view->vars['attr'],['data-context-config'=>json_encode($hidden)]):['data-context-config'=>json_encode($hidden)];
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefined(['hidden-parent', 'hidden-child', 'hidden-value', 'hidden']);
